@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Analysis</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sales Analysis</h1>
+  <div>
+    <label for="dimension">Dimension:</label>
+    <select id="dimension">
+      <option value="product_category">Product-Category</option>
+      <option value="geography">Geography-Loc</option>
+      <option value="product">Product</option>
+      <option value="customer_name">Customer</option>
+      <option value="country">Country</option>
+      <option value="year">Sales-Year</option>
+      <option value="quarter">Sales-Quarter</option>
+      <option value="month">Sales-Month</option>
+    </select>
+
+    <label for="measure">Measure:</label>
+    <select id="measure">
+      <option value="sales_units">Sales Units</option>
+      <option value="sales_price">Sales Price</option>
+      <option value="sales_revenue">Sales Revenue</option>
+      <option value="cost_of_sales">Cost of Sales</option>
+      <option value="profit_or_loss">Profit or Loss</option>
+    </select>
+
+    <button onclick="fetchAggregatedData()">Get Data</button>
+  </div>
+
+  <table id="sales-table">
+    <thead>
+      <tr id="table-headers"></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function fetchAggregatedData() {
+      const dimensionsSelect = document.getElementById('dimensions');
+      const measuresSelect = document.getElementById('measures');
+
+      const dimensions = Array.from(dimensionsSelect.selectedOptions).map(option => option.value);
+      const measures = Array.from(measuresSelect.selectedOptions).map(option => option.value);
+
+      const requestBody = {
+        dimensions: dimensions,
+        measures: measures
+      };
+      console.log('===requestBody====', requestBody);
+      try {
+        const response = await fetch('http://localhost:3000/api/getAggreagateComb', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+
+        const tableHeaders = document.querySelector('#table-headers');
+        const tableBody = document.querySelector('#sales-table tbody');
+        
+        tableHeaders.innerHTML = '';
+        tableBody.innerHTML = '';
+
+        if (data.length === 0) {
+          const tr = document.createElement('tr');
+          const tdNoData = document.createElement('td');
+          tdNoData.colSpan = 2;
+          tdNoData.textContent = 'No data available';
+          tr.appendChild(tdNoData);
+          tableBody.appendChild(tr);
+        } else {
+          // Create table headers
+          const columns = Object.keys(data[0]);
+          columns.forEach(column => {
+            const th = document.createElement('th');
+            th.textContent = column;
+            tableHeaders.appendChild(th);
+          });
+
+          // Create table rows
+          data.forEach(row => {
+            const tr = document.createElement('tr');
+            columns.forEach(column => {
+              const td = document.createElement('td');
+              td.textContent = row[column];
+              tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+          });
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+      }
+    }
+  </script>
+</body>
+</html>
+
